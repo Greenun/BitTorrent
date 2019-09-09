@@ -1,0 +1,1 @@
+#get about 10 nodes --> set into table
