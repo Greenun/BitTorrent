@@ -1,1 +1,7 @@
 # BitTorrent
+
+needs...
+
+asyncio
+sqlalchemy
+

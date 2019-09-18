@@ -1,6 +1,8 @@
 import asyncio
+import sys
 from utils.bencoder import *
-from utils.tools import RandomArgs
+from utils.tools import RandomArgs, extract_nodes
+from utils.ping import Ping
 from client import BitClientProtocol
 
 DHT_ROUTER = "67.215.246.10"
@@ -46,26 +48,42 @@ class DHTQuery(object):
 		
 		self.protocol = BitClientProtocol
 
-	def ping(self, target=(DHT_ROUTER, DHT_PORT)):
+	def ping(self, dest=(DHT_ROUTER, DHT_PORT)):
 		arg_dict = {"id": self.random.node_id}
 
 		self.prepare_payload("ping", arg_dict)
 
 		print(self.payload)
-		asyncio.run(self.send(target))
+		return asyncio.run(self.send(dest))
 
-	def find_node(self, target):
+	def find_node(self, dest=(DHT_ROUTER, DHT_PORT), target=None):
 		arg_dict = {
 			"id": self.random.node_id,
 			"target": None,
 		}
-		
+		if target:
+			arg_dict["target"] = target if isinstance(target, bytes) else bytes.fromhex(target)
+		else:
+			arg_dict["target"] = self.random.node_id
+
 		self.prepare_payload("find_node", arg_dict)
+		print(self.payload)
 
-	def get_peers(self, info_hash, target):
-		pass
+		return asyncio.run(self.send(dest))
+	
 
-	def announce_peer(self, info_hash, target):
+	def get_peers(self, dest=(DHT_ROUTER, DHT_PORT), info_hash=None):
+		arg_dict = {
+			"id": self.random.node_id,
+			"info_hash": self.random.info_hash if not info_hash else info_hash,
+		}
+
+		self.prepare_payload("get_peers", arg_dict)
+		print(self.payload)
+
+		return asyncio.run(self.send(dest))
+
+	def announce_peer(self, dest, info_hash, target):
 		pass
 
 	def prepare_payload(self, request_type, args):
@@ -76,7 +94,7 @@ class DHTQuery(object):
 		self.payload["q"] = request_type
 		self.payload["a"] = args
 
-		print(self.payload)
+		#print(self.payload)
 
 		self.payload = bencode(self.payload)
 
@@ -88,17 +106,51 @@ class DHTQuery(object):
 			lambda: self.protocol(self.payload, loop),
 			remote_addr = target_addr
 		)
-
 		try:
 			await protocol.connection_end
-			#how to know timeout occured
+			
+			#print(response)
+			#z = extract_info(response[b'r'][b'nodes'])
+			#print(z)
 			
 			if not protocol.connection_end.result():
 				#can take error msg or return error
-				pass
+				print("Error Occured!")
+				#handle Error
+
+			else:
+				response = bdecode(protocol.response)
+				return response
+			
 		except:
+			print(f"Error : {sys.exc_info()}")
 			transport.close()
 
+	'''
+	def bootstrap or query_sequence(self):
+		1. ping -- get node id
+		2. find_node
+			2.1 ping to nodes -- get alive nodes
+		3. get_peers
+			3.1 max checks ~= 32 (if info hash does not exist anywhere (or close nodes))
+			3.2 if get token goto 4 else regenerate info hash (about 2~3 times)
+			3.3 (maybe) known info hash needs
+		4. announce_peer (if got token)
+		-- need to check peer protocol for check file info
+	'''
+	def test_sequence(self):
+		pass
+
+	def test_get_peers(self, init_dest=(DHT_ROUTER, DHT_PORT), info_hash=None):
+		pass		
+
 if __name__ == "__main__":
-	dq = DHTQuery()
-	dq.ping()
+	dq = DHTQuery(node_id=b'F"D\xad>\xba70\xda\xa0\xacT\xc1](\xd7C\x8c\xca\x9a')
+	#dq.ping()
+	x = dq.find_node()
+	#print(extract_nodes(x['r'.encode()]['nodes'.encode()]))
+	t = extract_nodes(x['r'.encode()]['nodes'.encode()])
+	check = Ping()
+	check.ping_check([x['ip'] for x in t])
+
+	#dq.get_peers()

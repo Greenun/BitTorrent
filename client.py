@@ -6,6 +6,7 @@ class BitClientProtocol(asyncio.DatagramProtocol):
 		self.loop = loop
 		self.transport = None
 		self.timeout = timeout
+		self.response = None
 		self.connection_end = loop.create_future()
 
 	def connection_made(self, transport):
@@ -20,6 +21,7 @@ class BitClientProtocol(asyncio.DatagramProtocol):
 
 	def datagram_received(self, data, addr):
 		print("Received: ", data)#.decode()
+		self.response = data
 		self.transport.close()
 
 	def error_received(self, e):
@@ -29,7 +31,7 @@ class BitClientProtocol(asyncio.DatagramProtocol):
 
 	def connection_lost(self, e):
 		print("Connection closed")
-		self.stop_timer()
+		self.stop_timer()		
 		if not self.connection_end.done():
 			self.connection_end.set_result(True)
 

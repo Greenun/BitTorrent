@@ -1,3 +1,5 @@
+# test codes, cache
 .idea/
 __pycache__
 *test.py
+*.torrent

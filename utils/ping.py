@@ -3,7 +3,7 @@ import struct
 import select
 
 class Ping(object):
-	def __init__(self, etime=0.7):
+	def __init__(self, etime=0.5):
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, 1)
 		self.socket.settimeout(etime)
 		self.packet = None
@@ -15,7 +15,7 @@ class Ping(object):
 		_etc = 1
 		header = struct.pack("!bbHI", _type, _code, _checksum, _etc)#, _seq
 		_checksum = self.calculate_chksum(header)
-		print(_checksum)
+		#print(_checksum)
 		header = struct.pack("!bbHI", _type, _code, _checksum, _etc)
 		self.packet = header
 		return header
@@ -43,21 +43,24 @@ class Ping(object):
 	def receive(self, ip_list):
 		done_list = list()
 		failed_count = 0
-		rd, wr, ex = select.select([self.socket], [], [], 0.7)
+		rd, wr, ex = select.select([self.socket], [], [], 0.3)
 		while (len(done_list) + failed_count)  < len(ip_list):
 			#print(rd, wr, ex)
 			if not rd: break
 			try:
 				recv, addr = self.socket.recvfrom(1024)
-				print(recv)
-				print(addr)
+				#print(recv)
+				#print(addr)
 				done_list.append(addr)
 			except socket.timeout:
 				failed_count += 1
+		#print(done_list)
+		return done_list
 
 	def ping_check(self, ip_list):
 		self.send(ip_list)
-		self.receive(ip_list)
+		enable_ip = self.receive(ip_list)
+		return enable_ip
 
 if __name__ == '__main__':
 	ip_list = ["8.8.8.8", "127.0.0.1"]

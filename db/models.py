@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 import datetime
 
@@ -9,17 +9,21 @@ class ValidNodes(Base):
 
 	id = Column(Integer, primary_key=True)
 	node_id = Column(String, nullable=False, unique=True)
+	using = Column(Boolean, default=False)
 	created_time = Column(DateTime, default=datetime.datetime.utcnow)
 	#target node as foreing key
 
 	def __repr__(self):
-		return f"<ValidNode(id={self.id}, node_id={self.node_id}, created_time={self.created_time})>"
+		return f"<ValidNodes(id={self.id}, node_id={self.node_id}, using={self.using}, created_time={self.created_time})>"
 
 '''class TargetNodes(Base):
 	__tablename__ = 'target_nodes'
 
-	self.id = Column(Integer, primary_key=True)
-	self.node_id = Column(String, nullable=False, unique=True)
-	self.created_time = Column(DateTime, default=datetime.datetime.utcnow)
+	id = Column(Integer, primary_key=True)
+	node_id = Column(String, nullable=False, unique=True)
+	ip = Column(String, nullable=False)
+	port = Column(Integer, nullable=False)
+	good_node = Column(Boolean, default=False)
+	created_time = Column(DateTime, default=datetime.datetime.utcnow)
 	#valid node as foreing key --> close node list'''
 		
