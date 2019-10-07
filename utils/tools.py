@@ -106,6 +106,7 @@ def get_hash(filename):
 	'''
 		filename is based on --current-- root file directory
 		/utils X -> /
+		torrent file info hash is consist of many 20-bit info hashes(e.g., ubuntu live --> 20 * 1696 )
 	'''
 	current_path = os.path.dirname(os.path.abspath(__file__))
 	filepath = os.path.join(current_path, '../' ,filename)
@@ -117,8 +118,12 @@ def get_hash(filename):
 	#sha.update(piece)
 	length = content[b'info'][b'length']
 	piece_length = content[b'info'][b'piece length']
+	#print(len(piece))
 	print(piece[0:20])
-	print(piece[0:20].hex())
+	#print(piece[0:20].hex())
+	#return first 20-bit for test
+
+	return piece[0:20]
 
 	
 

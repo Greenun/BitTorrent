@@ -67,7 +67,7 @@ class DHTQuery(object):
 			arg_dict["target"] = self.random.node_id
 
 		self.prepare_payload("find_node", arg_dict)
-		print(self.payload)
+		#print(self.payload)
 
 		return asyncio.run(self.send(dest))
 	
@@ -108,8 +108,6 @@ class DHTQuery(object):
 		)
 		try:
 			await protocol.connection_end
-			
-			#print(response)
 			#z = extract_info(response[b'r'][b'nodes'])
 			#print(z)
 			
@@ -120,6 +118,7 @@ class DHTQuery(object):
 
 			else:
 				response = bdecode(protocol.response)
+				print(response)
 				return response
 			
 		except:
@@ -148,9 +147,22 @@ if __name__ == "__main__":
 	dq = DHTQuery(node_id=b'F"D\xad>\xba70\xda\xa0\xacT\xc1](\xd7C\x8c\xca\x9a')
 	#dq.ping()
 	x = dq.find_node()
-	#print(extract_nodes(x['r'.encode()]['nodes'.encode()]))
-	t = extract_nodes(x['r'.encode()]['nodes'.encode()])
+	
+	addr_list = extract_nodes(x['r'.encode()]['nodes'.encode()])
 	check = Ping()
-	check.ping_check([x['ip'] for x in t])
+	print(addr_list)
+	enables = check.ping_check([x['ip'] for x in addr_list])
 
-	#dq.get_peers()
+	enable_ip = list()
+	for e in enables:
+		enable_ip.append(e[0])
+
+	ip_and_ports = list()
+	for addr in addr_list:
+		if addr['ip'] in enable_ip:
+			ip_and_ports.append(addr)
+
+	print(ip_and_ports)
+
+
+	#dq.get_peers(info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@')

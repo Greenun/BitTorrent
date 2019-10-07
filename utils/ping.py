@@ -1,12 +1,14 @@
 import socket
 import struct
 import select
+import sys
 
 class Ping(object):
 	def __init__(self, etime=0.5):
 		self.socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, 1)
 		self.socket.settimeout(etime)
 		self.packet = None
+		self.sockets = None
 
 	def make_packet(self, data="A"):
 		_type = 8#echo
@@ -40,13 +42,59 @@ class Ping(object):
 		for ip in ip_list:
 			self.socket.sendto(self.packet, (ip, 0))
 
+	def multi_send(self, ip_list, data=None):
+		if not self.packet:
+			self.make_packet()
+
+		sockets = []
+		for ip in ip_list:
+			info = {"ip": ip,
+					"socket": socket.socket(socket.AF_INET, socket.SOCK_RAW, 1),
+				}
+			sockets.append(info)
+		for s in sockets:
+			s["socket"].sendto(self.packet, (s["ip"], 0))
+		self.sockets = sockets
+		#for i in self.sockets:
+		#	print(i["socket"].getblocking())
+
 	def receive(self, ip_list):
+		#import time
 		done_list = list()
 		failed_count = 0
-		rd, wr, ex = select.select([self.socket], [], [], 0.3)
-		while (len(done_list) + failed_count)  < len(ip_list):
-			#print(rd, wr, ex)
-			if not rd: break
+		
+		if self.sockets:
+			#rd, wr, _ = select.select([x["socket"] for x in self.sockets], [], [], 0.3)#0.3
+			while 1:
+				rd, wr, _ = select.select([x["socket"] for x in self.sockets], [], [], 0.3)#0.3
+				if not rd: continue#break if no waiting
+				for d in rd:
+					try:
+						print(d)
+						recv, addr = d.recvfrom(1024)
+						done_list.append(addr)
+					except:
+						failed_count += 1
+						print(sys.exc_info())
+		else:
+			try:
+				pass
+			except:
+				print(sys.exc_info())
+
+
+		'''rd, wr, ex = select.select([self.socket]*len(ip_list), [], [], 0.3)
+		#print(rd)
+		print(len(rd))
+		for s in rd:
+			try:
+				recv, addr = s.recvfrom(1024)
+				done_list.append(addr)
+			except socket.timeout:
+				failed_count += 1
+		'''
+
+		'''while (len(done_list) + failed_count)  < len(ip_list):
 			try:
 				recv, addr = self.socket.recvfrom(1024)
 				#print(recv)
@@ -54,11 +102,15 @@ class Ping(object):
 				done_list.append(addr)
 			except socket.timeout:
 				failed_count += 1
-		#print(done_list)
+		'''
+
+		print("Ping failed : " + str(failed_count))
 		return done_list
 
 	def ping_check(self, ip_list):
-		self.send(ip_list)
+		#self.send(ip_list)
+		self.multi_send(ip_list)
+
 		enable_ip = self.receive(ip_list)
 		return enable_ip
 
