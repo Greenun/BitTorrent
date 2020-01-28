@@ -1,16 +1,17 @@
 from sqlalchemy import create_engine
 from sqlalchemy.sql import select, text
 from sqlalchemy.orm import sessionmaker
-from models import Base
+from .models import Base
 
 
-#for memo
+# for memo
+# need to be env
 ROOT = 'postgres'
 PASSWORD = '0584qwqw'
 PORT = 5432
 DB_NAME = 'dht_database'
 
-#session
+
 def manage_session(task):
 	def session_task(self, *args, **kwargs):
 		session = sessionmaker(self.engine)()
@@ -18,6 +19,7 @@ def manage_session(task):
 		session.close()
 		#return True
 	return session_task
+
 
 class DHTDatabase(object):
 	def __init__(self, user, password, db_name, host='localhost', port=5432, debug=False):
@@ -59,19 +61,19 @@ class DHTDatabase(object):
 
 		return True
 
-	#create table with metadata
 	def create_table(self):
+		# create table with metadata
 		pass
 
-	#insert
 	@manage_session
 	def insert(self, session, data):
-		#data --> object to insert
+		# insert
+		# data --> object to insert
 		print('insert')
 
-	#select
 	@manage_session
 	def select(self, session, data):
+		# select
 		pass
 
 	@manage_session

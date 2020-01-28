@@ -59,13 +59,10 @@ class Ping(object):
         self.sockets = sockets
 
     def receive(self, ip_list):
-        # import time
         done_list = list()
-        # failed_count = 0
         if self.sockets:
             while 1:
                 rd, wr, _ = select.select([x["socket"] for x in self.sockets if not x["socket"].fileno() == -1], [], [], 0.5)
-                print(rd)
                 if not rd: break  # break if no waiting
                 for d in rd:
                     try:
@@ -75,10 +72,8 @@ class Ping(object):
                             d.close()
                             done_list.append(addr[0])
                     except socket.timeout:
-                        # failed_count += 1
                         print(sys.exc_info())
         for s in self.sockets:
-            print(s["socket"])
             if not s["socket"].fileno() == -1:
                 s["socket"].close()
         self.sockets = None

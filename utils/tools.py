@@ -20,9 +20,7 @@ class RandomArgs(object):
     def __init__(self, nid=None, ih=None, tid=None):
         self.hf = hashlib.sha1()
         # self.ihf = hashlib.sha1()
-        # self._transaction_id = self._generate_tid() if not tid else tid
-        # self._node_id = self._generate_nid() if not nid else bytes.fromhex(nid)
-        # self._info_hash = self._generate_ih() if not ih else ih
+        self._info_hash = self._generate_ih() if not ih else ih
         self._generate_tid() if not tid else tid
         # self._generate_nid() if not nid else bytes.fromhex(nid)
         if not nid:
@@ -65,7 +63,9 @@ class RandomArgs(object):
 
     @property
     def transaction_id(self):
+        self._generate_tid()
         return self._transaction_id
+
 
 
 # to bytes / to str
@@ -110,22 +110,18 @@ def _nodes_to_list(node_dict):
 
 
 def get_hash(filename):
-    '''
-        filename is based on --current-- root file directory
-        /utils X -> /
-        torrent file info hash is consist of many 20-bit info hashes(e.g., ubuntu live --> 20 * 1696 )
-    '''
+    # filename is based on --current-- root file directory
+    # /utils X -> /
+    # torrent file info hash is consist of many 20-bit info hashes(e.g., ubuntu live --> 20 * 1696 )
     current_path = os.path.dirname(os.path.abspath(__file__))
     filepath = os.path.join(current_path, '../', filename)
     with codecs.open(filepath, 'rb') as f:
-        from bencoder import bdecode
+        from .bencoder import bdecode
         content = bdecode(f.read())
         piece = content[b'info'][b'pieces']
-    # sha = hashlib.sha1()
-    # sha.update(piece)
+
     length = content[b'info'][b'length']
     piece_length = content[b'info'][b'piece length']
-    # print(len(piece))
     print(piece[0:20])
     # print(piece[0:20].hex())
     # return first 20-bit for test
@@ -140,8 +136,7 @@ def make_query(query, options=None):
 
     sha.update(random_str.encode())
     random_node = bytes.fromhex(sha.hexdigest())
-    argument = {"t": random_tid, "y": "q"}
-    argument["q"] = query
+    argument = {"t": random_tid, "y": "q", "q": query}
 
     if query == 'ping':
         argument["a"] = {"id": NODES[0]}  # 임시

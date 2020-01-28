@@ -34,7 +34,8 @@ class BitClientProtocol(asyncio.DatagramProtocol):
         print("Connection closed")
         self.stop_timer()
         if not self.connection_end.done():
-            self.connection_end.set_result(True)
+            # self.connection_end.set_result(True)
+            self.connection_end.set_result(self.response)
 
     def timer(self):
         self.timer = self.loop.call_later(self.timeout, self.timeout_handler)

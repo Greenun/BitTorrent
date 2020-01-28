@@ -8,33 +8,6 @@ from client import BitClientProtocol
 DHT_ROUTER = "67.215.246.10"
 DHT_PORT = 6881
 
-'''class BitQueryProtocol:
-	def __init__(self, query, loop):
-		self.query = query
-		self.loop = loop
-
-	def connection_made(self, transport):
-		self.transport = transport
-		#self.transport.sendto()
-	def datagram_received(self, data, addr):
-
-		self.transport.close()
-
-	def connection_lost(self):
-		pass
-
-if __name__ == "__main__":
-	loop = asyncio.get_event_loop()
-	query = 'ping'
-	connect = loop.create_datagram_endpoint(
-	    lambda: BitQueryProtocol(query, loop),
-	    remote_addr=(DHT_ROUTER, DHT_PORT))
-	transport, protocol = loop.run_until_complete(connect)
-	#loop.run_forever()
-	transport.close()
-	loop.close()'''
-
-
 class DHTQuery(object):
     def __init__(self, node_id=None, info_hash=None):
         self.payload = dict()
@@ -82,39 +55,45 @@ class DHTQuery(object):
 
         return asyncio.run(self.send(dest))
 
-    def announce_peer(self, dest, info_hash, target):
-        pass
+    def announce_peer(self, dest, info_hash, token):
+        arg_dict = {
+            "id": self.random.node_id,
+            "info_hash": info_hash,
+            "implied_port": 0,
+            "port": 6881,  # not fixed
+            "token": token,  # for test #token
+        }
+        self.prepare_payload("announce_peer", arg_dict)
+
+        return asyncio.run(self.send(dest))
 
     def prepare_payload(self, request_type, args):
-        self.random._generate_tid()
+        # self.random._generate_tid()
 
         self.payload["t"] = self.random.transaction_id
         self.payload["y"] = "q"  # class only for query
         self.payload["q"] = request_type
         self.payload["a"] = args
 
-        # print(self.payload)
-
-        self.payload = bencode(self.payload)
+        # self.payload = bencode(self.payload)
 
     async def send(self, target_addr):
         assert isinstance(target_addr, tuple)
         loop = asyncio.get_running_loop()
 
         transport, protocol = await loop.create_datagram_endpoint(
-            lambda: self.protocol(self.payload, loop),
+            lambda: self.protocol(bencode(self.payload), loop),
             remote_addr=target_addr
         )
         try:
             await protocol.connection_end
             # z = extract_info(response[b'r'][b'nodes'])
             # print(z)
-
+            # print(protocol.connection_end.result())
             if not protocol.connection_end.result():
                 # can take error msg or return error
                 print("Error Occured!")
             # handle Error
-
             else:
                 response = bdecode(protocol.response)
                 print(response)
@@ -123,7 +102,6 @@ class DHTQuery(object):
         except:
             print(f"Error : {sys.exc_info()}")
             transport.close()
-
     '''
     def bootstrap or query_sequence(self):
         1. ping -- get node id
@@ -145,24 +123,31 @@ class DHTQuery(object):
 
 
 if __name__ == "__main__":
-    dq = DHTQuery(node_id=b'F"D\xad>\xba70\xda\xa0\xacT\xc1](\xd7C\x8c\xca\x9a')
-    # dq.ping()
-    x = dq.find_node()
+    dq = DHTQuery(node_id=b'\x9e\x92\x1e\x97"lC\xc3\x0eB\x9a&\xa3\xc2\xd3o\x89\x94\x83B') # node_id=b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
+    dq.ping()
+    # x = dq.find_node()
+    # # print(x)
+    # if not x: sys.exit(0)
+    # addr_list = extract_nodes(x['r'.encode()]['nodes'.encode()])
+    # check = Ping()
+    # print(addr_list)
+    # enables = check.ping_check([x['ip'] for x in addr_list])
+    # print("enables: ", enables)
+    # enable_ip = list()
+    #
+    # ip_and_ports = list()
+    # for addr in addr_list:
+    #     if addr['ip'] in enables:
+    #         ip_and_ports.append(addr)
 
-    addr_list = extract_nodes(x['r'.encode()]['nodes'.encode()])
-    check = Ping()
-    print(addr_list)
-    enables = check.ping_check([x['ip'] for x in addr_list])
-
-    enable_ip = list()
-    for e in enables:
-        enable_ip.append(e[0])
-
-    ip_and_ports = list()
-    for addr in addr_list:
-        if addr['ip'] in enable_ip:
-            ip_and_ports.append(addr)
-
-    print(ip_and_ports)
-
-# dq.get_peers(info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@')
+    # print(ip_and_ports)
+    # for d in ip_and_ports:
+    #     t = dq.get_peers(dest=(d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@')
+    #     print(d["ip"], d["port"])
+    #     if not t: continue
+    #     print("----------- Announce Peer -----------")
+    #     tk = t[b'r'][b'token']
+    #     print(tk)
+    #     dq.announce_peer((d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@',
+    #                      token=tk)
+    #     print("----------- Announce Peer Ends -----------")
