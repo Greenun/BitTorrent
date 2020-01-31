@@ -67,9 +67,15 @@ class RandomArgs(object):
         return self._transaction_id
 
 
+def random_node_id():
+    random_str = uuid.uuid4().hex
+    hash_func = hashlib.sha1()
+    hash_func.update(random_str.encode())
+    return bytes.fromhex(hash_func.hexdigest())
 
-# to bytes / to str
+
 def convert(value, mode):
+    # to bytes / to str
     if mode == 'b':
         return bytes.fromhex(value)
     elif mode == 's':
@@ -82,17 +88,18 @@ def convert(value, mode):
 # use for find_nodes
 def extract_nodes(nodes):
     node_list = [nodes[x:x + 26] for x in range(0, len(nodes), 26)]  # map("".join, zip(*[iter(nodes)]*2))
-    print(node_list)
+    # print(node_list)
     info_dict = {}
 
     def extract_detail(value):
         assert isinstance(value, list)
         idx = 0
         for v in value:
-            d = {}
-            d['ip'] = '.'.join(['{}'.format(x) for x in v[20:24]])
-            d['port'] = int.from_bytes(v[24:], 'big')
-            d['nodeid'] = convert(v[0:20], 's')
+            d = {
+                'ip': '.'.join(['{}'.format(x) for x in v[20:24]]),
+                'port': int.from_bytes(v[24:], 'big'),
+                 'nodeid': v[0:20] # convert(v[0:20], 's')
+            }
             info_dict[str(idx)] = d
             idx += 1
         return info_dict
@@ -127,7 +134,6 @@ def get_hash(filename):
     # return first 20-bit for test
 
     return piece[0:20]
-
 
 def make_query(query, options=None):
     random_str = uuid.uuid4().hex

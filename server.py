@@ -1,6 +1,7 @@
 import asyncio
 from query import DHTQuery
 
+
 class DHTServer(object):
 	def __init__(self):
 		pass

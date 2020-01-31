@@ -2,7 +2,7 @@ from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.sql import select, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import InvalidRequestError
-from models import Base, ValidNodes, TargetNodes, TorrentInfo
+from .models import Base, ValidNodes, TargetNodes, TorrentInfo
 
 # for memo
 # https://docs.sqlalchemy.org/en/13/orm/query.html
@@ -20,7 +20,7 @@ def manage_session(task):
         session = sessionmaker(self.engine)()
         result = task(self, session, *args, **kwargs)
         session.close()
-    # return True
+        # return result
     return session_task
 
 
@@ -38,7 +38,6 @@ class DHTDatabase(object):
                                     + str(port) + "/" + db_name,
                                     echo=debug
                                     )
-        # self.session = sessionmaker(self.engine)()
         # Base.metadata.create_all(self.engine)
 
     def create_database(self, host='localhost', port=5432):
@@ -111,5 +110,12 @@ class DHTDatabase(object):
 
 
 if __name__ == "__main__":
-    ddb = DHTDatabase(ROOT, PASSWORD, DB_NAME, debug=True)
-    ddb.select_all("abcd")
+    # ddb = DHTDatabase(ROOT, PASSWORD, DB_NAME, debug=True)
+    # create model metadata
+    engine = create_engine("postgresql://" + ROOT
+        + ":" + PASSWORD
+        + "@" + 'localhost' + ":"
+        + str(5432) + "/" + DB_NAME,
+        echo=True
+    )
+    Base.metadata.create_all(engine)

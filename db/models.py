@@ -9,8 +9,8 @@ Base = declarative_base()
 class ValidNodes(Base):
     __tablename__ = 'valid_nodes'
 
-    id = Column(Integer, primary_key=True)
-    node_id = Column(String, nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    node_id = Column(postgresql.BYTEA, nullable=False, unique=True)
     using = Column(Boolean, default=False)
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
 
@@ -25,8 +25,8 @@ class ValidNodes(Base):
 class TargetNodes(Base):
     __tablename__ = 'target_nodes'
 
-    id = Column(Integer, primary_key=True)
-    node_id = Column(String, nullable=False, unique=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    node_id = Column(postgresql.BYTEA, nullable=False, unique=True)
     ip = Column(postgresql.INET, nullable=False)
     port = Column(Integer, nullable=False)
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
@@ -40,7 +40,7 @@ class TargetNodes(Base):
 class TorrentInfo(Base):
     __tablename__ = 'torrent_info'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=True)
     info_hash = Column(postgresql.BYTEA, nullable=False)
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
@@ -48,3 +48,9 @@ class TorrentInfo(Base):
     def __repr__(self):
         return f"<TorrentInfo(id={self.id}, name={self.name}, info_hash={self.info_hash}, " \
                f"created_time={self.created_time}>"
+
+# announce_peer 성공한 nodes
+class AnnouncedNodes(Base):
+    __tablename__ = 'announced_nodes'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)

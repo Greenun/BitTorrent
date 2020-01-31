@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 
 class BitClientProtocol(asyncio.DatagramProtocol):
@@ -12,26 +13,24 @@ class BitClientProtocol(asyncio.DatagramProtocol):
 
     def connection_made(self, transport):
         self.transport = transport
-        print("Connection Made")
-        # if not isinstance(self.data, str): self.data = str(self.data)
-        # self.transport.sendto(self.data.encode())
+        logging.info("Connection made")
         self.transport.sendto(self.data)  # data is bencoded
 
-        print("timer start")
+        # logging.info(f"Timer {self.timeout} sec")
         self.timer()
 
     def datagram_received(self, data, addr):
-        print("Received: ", data)  # .decode()
+        logging.info(f"Received: {data}")
         self.response = data
         self.transport.close()
 
     def error_received(self, e):
-        print("Exception Occured : ", e)
+        logging.error(f"Exception Occured : {e}")
         self.stop_timer()
         self.transport.close()
 
     def connection_lost(self, e):
-        print("Connection closed")
+        logging.info("Connection closed")
         self.stop_timer()
         if not self.connection_end.done():
             # self.connection_end.set_result(True)
@@ -45,13 +44,12 @@ class BitClientProtocol(asyncio.DatagramProtocol):
             self.timer.cancel()
 
     def timeout_handler(self):
-        print("Error : Connection Timeout")
+        logging.error("Error : Connection Timeout")
         self.transport.close()
         self.connection_end.set_result(False)
 
 
 async def client(data, *target_addr):
-    # client(ip, port) --> (ip, port)
     loop = asyncio.get_running_loop()
 
     transport, protocol = await loop.create_datagram_endpoint(

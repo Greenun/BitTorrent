@@ -6,8 +6,6 @@ import sys
 
 class Ping(object):
     def __init__(self, etime=0.5):
-        # self.socket = socket.socket(socket.AF_INET, socket.SOCK_RAW, 1)
-        # self.socket.settimeout(etime)
         self.packet = None
         self.sockets = None
 
@@ -18,7 +16,6 @@ class Ping(object):
         _etc = 1
         header = struct.pack("!bbHI", _type, _code, _checksum, _etc)  # , _seq
         _checksum = self.calculate_chksum(header)
-        # print(_checksum)
         header = struct.pack("!bbHI", _type, _code, _checksum, _etc)
         self.packet = header
         return header
@@ -49,9 +46,10 @@ class Ping(object):
 
         sockets = []
         for ip in ip_list:
-            info = {"ip": ip,
-                    "socket": socket.socket(socket.AF_INET, socket.SOCK_RAW, 1),
-                    }
+            info = {
+                "ip": ip,
+                "socket": socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_ICMP),
+            }
             info["socket"].setblocking(1)
             sockets.append(info)
         for s in sockets:
