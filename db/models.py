@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.orm import relationship, backref
 import datetime
 
 Base = declarative_base()
@@ -50,7 +51,9 @@ class TorrentInfo(Base):
                f"created_time={self.created_time}>"
 
 # announce_peer 성공한 nodes
-class AnnouncedNodes(Base):
-    __tablename__ = 'announced_nodes'
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
+# class AnnouncedNodes(Base):
+#     __tablename__ = 'announced_nodes'
+#
+#     id = Column(Integer, primary_key=True, autoincrement=True)
+#     announced = Column(Integer, ForeignKey('target_nodes.id'))
+#     target = relationship("TargetNodes")

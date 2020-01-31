@@ -118,4 +118,5 @@ if __name__ == "__main__":
         + str(5432) + "/" + DB_NAME,
         echo=True
     )
+    # Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)

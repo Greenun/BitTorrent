@@ -1,16 +1,21 @@
 import asyncio
-import sys, os
-from utils.bencoder import *
-from utils.tools import RandomArgs, extract_nodes, random_node_id
+import sys
+import os
+from .utils.bencoder import *
+from .utils.tools import RandomArgs, extract_nodes, random_node_id
 import logging
-from utils.ping import Ping
-from client import BitClientProtocol
-from db.models import ValidNodes, TargetNodes, TorrentInfo
-from db.controller import DHTDatabase
+from .utils.ping import Ping
+from .client import BitClientProtocol
+from .db.models import ValidNodes, TargetNodes, TorrentInfo
+from .db.controller import DHTDatabase
 
 DHT_ROUTER = "67.215.246.10"
 DHT_PORT = 6881
 MAX_RETRY = 3
+
+# for memo
+# NAT Traversal
+# https://tools.ietf.org/html/rfc5389
 
 
 class DHTQuery(object):
@@ -24,11 +29,11 @@ class DHTQuery(object):
         else:
             self.random = RandomArgs()
         self.protocol = BitClientProtocol
-        # self.controller = DHTDatabase(
-        #     os.getenv('DB_USER', 'postgres'),
-        #     os.getenv('DB_PASSWORD', '0584qwqw'),
-        #     os.getenv('DB_NAME', 'dht_database')
-        # )
+        self.controller = DHTDatabase(
+            os.getenv('DB_USER', 'postgres'),
+            os.getenv('DB_PASSWORD', '0584qwqw'),
+            os.getenv('DB_NAME', 'dht_database')
+        )
 
     def ping(self, dest=(DHT_ROUTER, DHT_PORT)):
         arg_dict = {"id": self.random.node_id}
@@ -145,7 +150,11 @@ class DHTQuery(object):
                 target_nodes[idx_key] = node
                 idx_key += 1
         logging.info(target_nodes)
-        # self.controller.insert(data=[TargetNodes(node_id=)])
+        self.controller.insert(data=[TargetNodes(
+            node_id=tn['nodeid'],
+            ip=tn['ip'],
+            port=tn['port'],
+        ) for tn in target_nodes.values()])
 
     def spread_nodes(self, info_hash=None):
         if not info_hash:
