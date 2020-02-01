@@ -116,6 +116,13 @@ def _nodes_to_list(node_dict):
     return node_list
 
 
+def get_distance(origin, remote):
+    result = b''
+    for i in range(len(origin)):
+        result += bytes([origin[i] ^ remote[i]])
+    bin_result = bin(int.from_bytes(result, 'big'))
+    return bin_result.count('1')
+
 def get_hash(filename):
     # filename is based on --current-- root file directory
     # /utils X -> /
@@ -134,6 +141,7 @@ def get_hash(filename):
     # return first 20-bit for test
 
     return piece[0:20]
+
 
 def make_query(query, options=None):
     random_str = uuid.uuid4().hex

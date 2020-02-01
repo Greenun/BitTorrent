@@ -5,7 +5,7 @@ from .utils.bencoder import *
 from .utils.tools import RandomArgs, extract_nodes, random_node_id
 import logging
 from .utils.ping import Ping
-from .client import BitClientProtocol
+from .client_protocol import DHTClientProtocol
 from .db.models import ValidNodes, TargetNodes, TorrentInfo
 from .db.controller import DHTDatabase
 
@@ -19,7 +19,7 @@ MAX_RETRY = 3
 
 
 class DHTQuery(object):
-    def __init__(self, node_id=None, info_hash=None):
+    def __init__(self, node_id=None, info_hash=None, controller=None):
         self.payload = dict()
         self.random = None
         if node_id and info_hash:
@@ -28,12 +28,12 @@ class DHTQuery(object):
             self.random = RandomArgs(node_id) if node_id else RandomArgs(None, info_hash)
         else:
             self.random = RandomArgs()
-        self.protocol = BitClientProtocol
+        self.protocol = DHTClientProtocol
         self.controller = DHTDatabase(
             os.getenv('DB_USER', 'postgres'),
             os.getenv('DB_PASSWORD', '0584qwqw'),
             os.getenv('DB_NAME', 'dht_database')
-        )
+        ) if not controller else controller
 
     def ping(self, dest=(DHT_ROUTER, DHT_PORT)):
         arg_dict = {"id": self.random.node_id}
@@ -101,12 +101,9 @@ class DHTQuery(object):
         )
         try:
             await protocol.connection_end
-            # z = extract_info(response[b'r'][b'nodes'])
-            # print(z)
-            # print(protocol.connection_end.result())
             if not protocol.connection_end.result():
                 # can take error msg or return error
-                logging.error("Error Occured!")
+                logging.error("Error Occurred!")
             # handle Error
             else:
                 response = bdecode(protocol.response)
@@ -131,9 +128,6 @@ class DHTQuery(object):
 
     def collect_nodes(self, dest, target=None):
         # find nodes and health check --> insert to DB
-        if not target:
-            # DB select
-            pass
         for i in range(MAX_RETRY):
             response = self.find_node(dest, target)
             if response: break

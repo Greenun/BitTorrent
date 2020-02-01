@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 
-class BitClientProtocol(asyncio.DatagramProtocol):
+class DHTClientProtocol(asyncio.DatagramProtocol):
     def __init__(self, data, loop, timeout=1):
         self.data = data
         self.loop = loop
@@ -53,7 +53,7 @@ async def client(data, *target_addr):
     loop = asyncio.get_running_loop()
 
     transport, protocol = await loop.create_datagram_endpoint(
-        lambda: BitClientProtocol(data, loop),
+        lambda: DHTClientProtocol(data, loop),
         remote_addr=target_addr
     )  # ("127.0.0.1", 40000)
     try:

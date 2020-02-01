@@ -1,5 +1,5 @@
 import asyncio
-from query import DHTQuery
+from .query import DHTQuery
 
 
 class DHTServer(object):

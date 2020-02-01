@@ -101,6 +101,10 @@ class DHTDatabase(object):
         return records
 
     @manage_session
+    def select_close_targets(self, session):
+        records = session.query(TargetNodes).order_by().limit(8) # 임시
+
+    @manage_session
     def update(self, session, data):
         pass
 
