@@ -10,6 +10,7 @@ class DHTClientProtocol(asyncio.DatagramProtocol):
         self.timeout = timeout
         self.response = None
         self.connection_end = loop.create_future()
+        self.timer = None
 
     def connection_made(self, transport):
         self.transport = transport

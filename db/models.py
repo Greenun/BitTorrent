@@ -57,3 +57,4 @@ class TorrentInfo(Base):
 #     id = Column(Integer, primary_key=True, autoincrement=True)
 #     announced = Column(Integer, ForeignKey('target_nodes.id'))
 #     target = relationship("TargetNodes")
+#     created_time = Column(DateTime, default=datetime.datetime.utcnow)
