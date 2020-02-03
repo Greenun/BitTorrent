@@ -134,38 +134,6 @@ def get_hash(filename):
     return piece[0:20], [piece[i:i+20] for i in range(0, piece_length, 20)]
 
 
-def make_query(query, options=None):
-    random_str = uuid.uuid4().hex
-    random_tid = uuid.uuid4().hex[0:2]  # transaction id
-    sha = hashlib.sha1()
-
-    sha.update(random_str.encode())
-    random_node = bytes.fromhex(sha.hexdigest())
-    argument = {"t": random_tid, "y": "q", "q": query}
-
-    if query == 'ping':
-        argument["a"] = {"id": NODES[0]}  # 임시
-    elif query == 'find_node':
-        # options : target node
-        assert options
-        argument["a"] = {"id": NODES[0], "target": options}  # 임시
-    elif query == 'get_peers':
-        # options : info hash
-        if not options:
-            sha.update(uuid.uuid4().hex)
-            random_info = bytes.fromhex(sha.hexdigest())
-            argument["a"] = {"id": NODES[0], "info_hash": random_info}  # 임시
-        else:
-            argument["a"] = {"id": NODES[0], "info_hash": options}  # 임시
-    elif query == 'announce_peer':
-        # options : info hash, token(from get_peers) tuple(ih, to)
-        assert isinstance(options, tuple) or isinstance(options, list)
-        argument["a"] = {"id": NODES[0], "implied_port": 0, "info_hash": options[0], "port": STATIC_PORT,
-                         "token": options[1]}  # 임시
-
-    return argument
-
-
 if __name__ == '__main__':
     # get_hash("ubuntu-18.04.3-live-server-amd64.iso.torrent")
     pass

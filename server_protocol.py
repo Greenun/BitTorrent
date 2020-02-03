@@ -21,11 +21,11 @@ class DHTServerProtocol(asyncio.DatagramProtocol):
         self.controller = controller
         self.transport = None
 
-        self.connection_end = loop.create_future()
+        # self.connection_end = loop.create_future()
 
     def connection_made(self, transport: transports.BaseTransport) -> None:
         self.transport = transport
-        logging.info(f"Client Connected: {transport.get_extra_info('peername')}")
+        logging.info(f"Client Connected: {self.transport.get_extra_info('peername')}")
 
     def datagram_received(self, data, addr: (str, int)) -> None:
         logging.info(f"Data From {addr}")

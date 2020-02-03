@@ -113,18 +113,6 @@ class DHTQuery(object):
         except:
             logging.error(f"Error : {sys.exc_info()}")
             transport.close()
-    '''
-    def bootstrap or query_sequence(self):
-        1. ping -- get node id
-        2. find_node
-            2.1 ping to nodes -- get alive nodes
-        3. get_peers
-            3.1 max checks ~= 32 (if info hash does not exist anywhere (or close nodes))
-            3.2 if get token goto 4 else regenerate info hash (about 2~3 times)
-            3.3 (maybe) known info hash needs
-        4. announce_peer (if got token)
-        -- need to check peer protocol for check file info
-    '''
 
     def collect_nodes(self, dest, target=None):
         # find nodes and health check --> insert to DB
