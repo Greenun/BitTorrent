@@ -40,7 +40,7 @@ class DHTQuery(object):
 
         self.prepare_payload("ping", arg_dict)
 
-        # logging.info(self.payload)
+        logging.info(self.payload)
         return asyncio.run(self.send(dest))
 
     def find_node(self, dest=(DHT_ROUTER, DHT_PORT), target=None):
@@ -54,7 +54,7 @@ class DHTQuery(object):
             arg_dict["target"] = self.random.node_id
 
         self.prepare_payload("find_node", arg_dict)
-        # logging.info(self.payload)
+        logging.info(self.payload)
 
         return asyncio.run(self.send(dest))
 
@@ -106,8 +106,8 @@ class DHTQuery(object):
                 logging.error("Error Occurred!")
             # handle Error
             else:
+                print(protocol.response)
                 response = bdecode(protocol.response)
-                print(response)
                 return response
 
         except:
@@ -123,6 +123,7 @@ class DHTQuery(object):
             logging.warning(f"Request find_node to {dest} is not available now.")
             return
         node_address = extract_nodes(response[b'r'][b'nodes'])
+        # icmp ping check
         icmp = Ping()
         enable_ip = icmp.ping_check([addr['ip'] for addr in node_address])
         target_nodes = dict()
@@ -131,16 +132,31 @@ class DHTQuery(object):
             if node['ip'] in enable_ip:
                 target_nodes[idx_key] = node
                 idx_key += 1
-        logging.info(target_nodes)
-        self.controller.insert(data=[TargetNodes(
-            node_id=tn['nodeid'],
-            ip=tn['ip'],
-            port=tn['port'],
-        ) for tn in target_nodes.values()])
+
+        healthy_nodes = self.multi_ping(target_nodes)
+        logging.info(healthy_nodes)
+
+        if healthy_nodes:
+            self.controller.insert(data=[TargetNodes(
+                node_id=tn['nodeid'],
+                ip=tn['ip'],
+                port=tn['port'],
+            ) for tn in healthy_nodes])
 
     def spread_nodes(self, info_hash=None):
         if not info_hash:
             info_hash = self.random.info_hash
+
+    def multi_ping(self, nodes, max_retry=MAX_RETRY):
+        # bittorrent ping check
+        healthy_nodes = list()
+        for tn in nodes.values():
+            for _ in range(max_retry):
+                resp = self.ping(dest=(tn['ip'], tn['port']))
+                if resp:
+                    healthy_nodes.append(tn)
+                    break
+        return healthy_nodes
 
     def test_get_peers(self, init_dest=(DHT_ROUTER, DHT_PORT), info_hash=None):
         pass

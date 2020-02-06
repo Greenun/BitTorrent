@@ -10,7 +10,7 @@ class DHTClientProtocol(asyncio.DatagramProtocol):
         self.timeout = timeout
         self.response = None
         self.connection_end = loop.create_future()
-        self.timer = None
+        self._timer = None
 
     def connection_made(self, transport):
         self.transport = transport
@@ -38,11 +38,11 @@ class DHTClientProtocol(asyncio.DatagramProtocol):
             self.connection_end.set_result(self.response)
 
     def timer(self):
-        self.timer = self.loop.call_later(self.timeout, self.timeout_handler)
+        self._timer = self.loop.call_later(self.timeout, self.timeout_handler)
 
     def stop_timer(self):
-        if self.timer:
-            self.timer.cancel()
+        if self._timer:
+            self._timer.cancel()
 
     def timeout_handler(self):
         logging.error("Error : Connection Timeout")

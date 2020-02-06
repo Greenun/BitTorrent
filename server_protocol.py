@@ -11,6 +11,9 @@ PAGE_SIZE = 32
 # for memo
 # asyncio udp protocol (proxy)
 # https://gist.github.com/vxgmichel/b2cf8536363275e735c231caef35a5df
+# https://gist.github.com/vxgmichel/e47bff34b68adb3cf6bd4845c4bed448#file-aioudp-py-L132
+# logging
+# https://hamait.tistory.com/880
 
 
 class DHTServerProtocol(asyncio.DatagramProtocol):
