@@ -144,8 +144,47 @@ class DHTQuery(object):
             ) for tn in healthy_nodes])
 
     def spread_nodes(self, info_hash=None):
-        if not info_hash:
-            info_hash = self.random.info_hash
+        info_hash = self.random.info_hash if not info_hash else info_hash
+        # 8 nodes
+        target_nodes = self.controller.select_all_target()[:8]
+
+    def announce_direct(self, target: (str, int), info_hash=None):
+        info_hash = self.random.info_hash if not info_hash else info_hash
+        nodes = self.__get(target, info_hash) # get peer nodes with token
+        if not nodes:
+            logging.warning(f"get_peer request")
+
+    def __get(self, target, info_hash):
+        targets = list(target)
+        announces = list()
+        for _ in range(2):
+            for _ in range(len(targets)):
+                t = targets.pop(0)
+                for _ in range(MAX_RETRY):
+                    response = self.get_peers(dest=t, info_hash=info_hash)
+                    if response:
+                        break
+                if not response:
+                    continue
+                if not response.get('token'):
+                    nodes = extract_nodes(response.get(b'r').get(b'nodes'))
+                    targets.extend([(n['ip'], n['port']) for n in nodes.values()])
+                else:
+                    announces.append((t, response.get('token')))
+        return announces, targets
+
+    def __announce(self, response, target: (str, int), info_hash):
+        # response : get_peer response
+        target_nodes = list()
+        for _ in range(MAX_RETRY):
+
+            if response.get('token'):
+                # announce peer
+                break
+            else:
+                target_nodes.extend(extract_nodes(response.get(b'r').get(b'nodes')))
+                for node in target_nodes.values():
+                    self.get_peers(dest=(node['ip'], node['port']), info_hash=info_hash)
 
     def multi_ping(self, nodes, max_retry=MAX_RETRY):
         # bittorrent ping check
@@ -168,6 +207,7 @@ if __name__ == "__main__":
     dq = DHTQuery(node_id=b'\x9e\x92\x1e\x97"lC\xc3\x0eB\x9a&\xa3\xc2\xd3o\x89\x94\x83B') # node_id=b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
     target = random_node_id()
     dq.collect_nodes(dest=(DHT_ROUTER, DHT_PORT), target=target)
+
     # b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
     # x = dq.find_node()
 

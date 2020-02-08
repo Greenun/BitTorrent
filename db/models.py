@@ -12,10 +12,8 @@ class ValidNodes(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     node_id = Column(postgresql.BYTEA, nullable=False, unique=True)
-    using = Column(Boolean, default=False)
+    # using = Column(Boolean, default=False)
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
-
-    # target node as foreing key
 
     def __repr__(self):
         return f"<ValidNodes(id={self.id}, node_id={self.node_id}, using={self.using}, " \
