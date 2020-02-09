@@ -3,6 +3,8 @@ from sqlalchemy.sql import select, text
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import InvalidRequestError
 from .models import Base, ValidNodes, TargetNodes, TorrentInfo
+from ..utils.tools import get_distance
+import heapq
 
 # for memo
 # https://docs.sqlalchemy.org/en/13/orm/query.html
@@ -94,15 +96,21 @@ class DHTDatabase(object):
         return records
 
     @manage_session
-    def get_idle_nodes(self, session):
-        records = session.query(ValidNodes).filter(ValidNodes.using == False)
-        # for r in records:
-        #     print(r)
-        return records
-
-    @manage_session
-    def select_close_targets(self, session):
-        records = session.query(TargetNodes).order_by().limit(8) # 임시
+    def select_close_targets(self, session, node_id):
+        records = session.query(TargetNodes).limit(64) # 임시
+        distances = list()
+        for target_node in records:
+            distance = get_distance(node_id, target_node.node_id)
+            node_info = {
+                'node_id': target_node.node_id,
+                'ip': target_node.ip,
+                'port': target_node.port,
+            }
+            heapq.heappush(distances, (distance, node_info))
+        ret = list()
+        for i in range(8):
+            ret.append(heapq.heappop(distances))
+        return ret
 
     @manage_session
     def update(self, session, data):
@@ -122,5 +130,5 @@ if __name__ == "__main__":
         + str(5432) + "/" + DB_NAME,
         echo=True
     )
-    # Base.metadata.drop_all(engine)
+    Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)

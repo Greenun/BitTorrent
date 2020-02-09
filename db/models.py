@@ -12,7 +12,6 @@ class ValidNodes(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     node_id = Column(postgresql.BYTEA, nullable=False, unique=True)
-    # using = Column(Boolean, default=False)
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):
@@ -20,8 +19,8 @@ class ValidNodes(Base):
                f"created_time={self.created_time})>"
 
 
-# 응답하는 노드 저장
 class TargetNodes(Base):
+    # responded nodes: icmp ping and bt ping
     __tablename__ = 'target_nodes'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -35,8 +34,8 @@ class TargetNodes(Base):
                f"created_time={self.created_time}>"
 
 
-# 사용 가능한 info hash 저장
 class TorrentInfo(Base):
+    # 사용 가능한 info hash 저장
     __tablename__ = 'torrent_info'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -48,11 +47,16 @@ class TorrentInfo(Base):
         return f"<TorrentInfo(id={self.id}, name={self.name}, info_hash={self.info_hash}, " \
                f"created_time={self.created_time}>"
 
-# announce_peer 성공한 nodes
-# class AnnouncedNodes(Base):
-#     __tablename__ = 'announced_nodes'
-#
-#     id = Column(Integer, primary_key=True, autoincrement=True)
-#     announced = Column(Integer, ForeignKey('target_nodes.id'))
-#     target = relationship("TargetNodes")
-#     created_time = Column(DateTime, default=datetime.datetime.utcnow)
+
+class AnnouncedNodes(Base):
+    # announced nodes
+    __tablename__ = 'announced_nodes'
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    announced = Column(Integer, ForeignKey('target_nodes.id'))
+    target = relationship("TargetNodes")
+    created_time = Column(DateTime, default=datetime.datetime.utcnow)
+
+    def __repr__(self):
+        return f"<{self.__class__.qualname__}(id={self.id}, announced={self.announced}, " \
+               f"created_time={self.created_time})>"

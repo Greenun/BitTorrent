@@ -173,18 +173,20 @@ class DHTQuery(object):
                     announces.append((t, response.get('token')))
         return announces, targets
 
-    def __announce(self, response, target: (str, int), info_hash):
-        # response : get_peer response
-        target_nodes = list()
-        for _ in range(MAX_RETRY):
-
-            if response.get('token'):
-                # announce peer
-                break
-            else:
-                target_nodes.extend(extract_nodes(response.get(b'r').get(b'nodes')))
-                for node in target_nodes.values():
-                    self.get_peers(dest=(node['ip'], node['port']), info_hash=info_hash)
+    def __announce(self, announces: list, info_hash):
+        # announces: __get() result
+        announced = list()
+        announce_failed = list()
+        for target, token in announces:
+            for _ in range(MAX_RETRY):
+                response = self.announce_peer(target, info_hash, token)
+                if response:
+                    # announced.append
+                    announced.append(response.get(b'r').get(b'id'))
+            if not response:
+                announce_failed.append(target)
+                continue
+        return announced, announce_failed
 
     def multi_ping(self, nodes, max_retry=MAX_RETRY):
         # bittorrent ping check
@@ -205,13 +207,13 @@ if __name__ == "__main__":
     r = logging.getLogger()
     r.setLevel(logging.INFO)
     dq = DHTQuery(node_id=b'\x9e\x92\x1e\x97"lC\xc3\x0eB\x9a&\xa3\xc2\xd3o\x89\x94\x83B') # node_id=b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
-    target = random_node_id()
-    dq.collect_nodes(dest=(DHT_ROUTER, DHT_PORT), target=target)
+    # target = random_node_id()
+    # dq.collect_nodes(dest=(DHT_ROUTER, DHT_PORT), target=target)
 
     # b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
-    # x = dq.find_node()
+    x = dq.find_node()
 
-    # # print(x)
+    # print(x)
     # if not x: sys.exit(0)
     # addr_list = extract_nodes(x['r'.encode()]['nodes'.encode()])
     # check = Ping()
@@ -224,7 +226,7 @@ if __name__ == "__main__":
     # for addr in addr_list:
     #     if addr['ip'] in enables:
     #         ip_and_ports.append(addr)
-
+    #
     # print(ip_and_ports)
     # for d in ip_and_ports:
     #     t = dq.get_peers(dest=(d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@')
@@ -233,6 +235,6 @@ if __name__ == "__main__":
     #     print("----------- Announce Peer -----------")
     #     tk = t[b'r'][b'token']
     #     print(tk)
-    #     dq.announce_peer((d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@',
+    #     res = dq.announce_peer((d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@',
     #                      token=tk)
     #     print("----------- Announce Peer Ends -----------")
