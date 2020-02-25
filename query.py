@@ -148,11 +148,16 @@ class DHTQuery(object):
         # 8 nodes
         target_nodes = self.controller.select_all_target()[:8]
 
-    def announce_direct(self, target: (str, int), info_hash=None):
+    def announce_sequence(self, target: (str, int), info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
-        nodes = self.__get(target, info_hash) # get peer nodes with token
-        if not nodes:
-            logging.warning(f"get_peer request")
+        announces, _ = self.__get(target, info_hash)  # get peer nodes with token
+        if not announces:
+            return False, None
+        success, failed = self.__announce(announces, info_hash)
+        if not success:
+            return False, failed
+        else:
+            return True, success
 
     def __get(self, target, info_hash):
         targets = list(target)

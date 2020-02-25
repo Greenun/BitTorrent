@@ -54,7 +54,7 @@ class AnnouncedNodes(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     announced = Column(Integer, ForeignKey('target_nodes.id'))
-    target = relationship("TargetNodes")
+    target = relationship("TargetNodes", backref=backref("announced_id", order_by=id))
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):

@@ -40,7 +40,6 @@ class DHTDatabase(object):
                                     + str(port) + "/" + db_name,
                                     echo=debug
                                     )
-        # Base.metadata.create_all(self.engine)
 
     def create_database(self, host='localhost', port=5432):
         # create database if not exist
