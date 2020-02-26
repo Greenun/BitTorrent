@@ -1,13 +1,13 @@
 import asyncio
 import sys
 import os
-from .utils.bencoder import *
-from .utils.tools import RandomArgs, extract_nodes, random_node_id
+from BitTorrent.utils.bencoder import *
+from BitTorrent.utils.tools import RandomArgs, extract_nodes
 import logging
-from .utils.ping import Ping
-from .client_protocol import DHTClientProtocol
-from .db.models import ValidNodes, TargetNodes, TorrentInfo
-from .db.controller import DHTDatabase
+from BitTorrent.utils.ping import Ping
+from BitTorrent.protocols.client_protocol import DHTClientProtocol
+from BitTorrent.db.models import TargetNodes
+from BitTorrent.db.controller import DHTDatabase
 
 DHT_ROUTER = "67.215.246.10"
 DHT_PORT = 6881
@@ -142,11 +142,18 @@ class DHTQuery(object):
                 ip=tn['ip'],
                 port=tn['port'],
             ) for tn in healthy_nodes])
+        return healthy_nodes
 
-    def spread_nodes(self, info_hash=None):
+    def spread_nodes(self, info_hash=None, random=True):
         info_hash = self.random.info_hash if not info_hash else info_hash
         # 8 nodes
-        target_nodes = self.controller.select_all_target()[:8]
+        if random:
+            # random 8
+            target_nodes = self.controller.select_random_nodes()
+        else:
+            # close 8
+            target_nodes = self.controller.select_close_targets(self.random.node_id)
+
 
     def announce_sequence(self, target: (str, int), info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
@@ -203,9 +210,6 @@ class DHTQuery(object):
                     healthy_nodes.append(tn)
                     break
         return healthy_nodes
-
-    def test_get_peers(self, init_dest=(DHT_ROUTER, DHT_PORT), info_hash=None):
-        pass
 
 
 if __name__ == "__main__":

@@ -40,7 +40,7 @@ class TorrentInfo(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String, nullable=True)
-    info_hash = Column(postgresql.BYTEA, nullable=False)
+    info_hash = Column(postgresql.BYTEA, nullable=False, unique=True)
     created_time = Column(DateTime, default=datetime.datetime.utcnow)
 
     def __repr__(self):

@@ -1,6 +1,5 @@
 import asyncio
-from .query import DHTQuery
-from . import server_protocol
+from BitTorrent.protocols import server_protocol
 import logging
 
 

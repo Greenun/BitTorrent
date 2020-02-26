@@ -1,9 +1,10 @@
 from sqlalchemy import create_engine, MetaData, Table
 from sqlalchemy.sql import select, text
+from sqlalchemy.sql.expression import func
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import InvalidRequestError
-from .models import Base, ValidNodes, TargetNodes, TorrentInfo
-from ..utils.tools import get_distance
+from BitTorrent.db.models import Base, ValidNodes, TargetNodes, TorrentInfo
+from BitTorrent.utils.tools import get_distance
 import heapq
 
 # for memo
@@ -96,7 +97,7 @@ class DHTDatabase(object):
 
     @manage_session
     def select_close_targets(self, session, node_id):
-        records = session.query(TargetNodes).limit(64) # 임시
+        records = session.query(TargetNodes).order_by(func.random()).limit(64)  # 임시
         distances = list()
         for target_node in records:
             distance = get_distance(node_id, target_node.node_id)
@@ -110,6 +111,14 @@ class DHTDatabase(object):
         for i in range(8):
             ret.append(heapq.heappop(distances))
         return ret
+
+    @manage_session
+    def select_random_nodes(self, session, limit=8):
+        records = session.query(TargetNodes).order_by(func.random()).limit(8)
+        target_nodes = list()
+        for record in records:
+            target_nodes.append(record)
+        return target_nodes
 
     @manage_session
     def update(self, session, data):

@@ -126,12 +126,10 @@ def get_hash(filename):
         from .bencoder import bdecode
         content = bdecode(f.read())
         piece = content[b'info'][b'pieces']
-
     length = content[b'info'][b'length']
     piece_length = content[b'info'][b'piece length']
-    print(piece[0:20])
     # return first 20-bit for test
-    return piece[0:20], [piece[i:i+20] for i in range(0, piece_length, 20)]
+    return piece[0:20], [piece[i:i+20] for i in range(0, (length // piece_length) * 20, 20)]
 
 
 if __name__ == '__main__':

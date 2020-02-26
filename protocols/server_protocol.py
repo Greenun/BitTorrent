@@ -1,10 +1,10 @@
 import asyncio
 from asyncio import transports
 import logging
-from .utils import bencoder
-from .utils.tools import get_distance
-from .db.models import TargetNodes
-from .db.controller import DHTDatabase
+from BitTorrent.utils import bencoder
+from BitTorrent.utils.tools import get_distance
+from BitTorrent.db.models import TargetNodes
+from BitTorrent.db.controller import DHTDatabase
 
 PAGE_SIZE = 32
 
