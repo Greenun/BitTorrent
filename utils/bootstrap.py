@@ -1,6 +1,9 @@
 from BitTorrent.utils.tools import get_hash
 from BitTorrent.db import controller, models
+from BitTorrent import query
 import os
+import random
+import datetime
 import pathlib
 import argparse
 
@@ -42,6 +45,18 @@ def save_hash(db_controller, filename):
 
     db_controller.insert(info_objects)
     return True
+
+
+def node_collect(db_controller: controller.DHTDatabase):
+    valid = db_controller.select_random_valid()[0]
+    info_records = db_controller.select_all_info()
+    random.seed(datetime.datetime.now())
+    info_hash = info_records[random.randint(0, len(info_records))]
+    dht_query = query.DHTQuery(
+        node_id=valid,
+        info_hash=info_hash,
+        controller=db_controller
+    )
 
 
 if __name__ == '__main__':

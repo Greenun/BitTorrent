@@ -80,9 +80,9 @@ class DHTDatabase(object):
         return True
 
     @manage_session
-    def select_all_valid(self, session):
+    def select_random_valid(self, session):
         # select
-        records = session.query(ValidNodes).all()
+        records = session.query(ValidNodes).order_by(func.random()).limit(32)
         return records
 
     @manage_session
@@ -91,8 +91,8 @@ class DHTDatabase(object):
         return records
 
     @manage_session
-    def select_all_info(self, session):
-        records = session.query(TorrentInfo).all()
+    def select_random_info(self, session):
+        records = session.query(TorrentInfo).order_by(func.random()).limit(64)
         return records
 
     @manage_session

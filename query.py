@@ -154,7 +154,6 @@ class DHTQuery(object):
             # close 8
             target_nodes = self.controller.select_close_targets(self.random.node_id)
 
-
     def announce_sequence(self, target: (str, int), info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
         announces, _ = self.__get(target, info_hash)  # get peer nodes with token
