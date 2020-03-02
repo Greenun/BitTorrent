@@ -6,7 +6,7 @@ from BitTorrent.utils.tools import RandomArgs, extract_nodes
 import logging
 from BitTorrent.utils.ping import Ping
 from BitTorrent.protocols.client_protocol import DHTClientProtocol
-from BitTorrent.db.models import TargetNodes
+from BitTorrent.db.models import TargetNodes, AnnouncedNodes
 from BitTorrent.db.controller import DHTDatabase
 
 DHT_ROUTER = "67.215.246.10"
@@ -30,7 +30,7 @@ class DHTQuery(object):
             self.random = RandomArgs()
         self.protocol = DHTClientProtocol
         self.controller = DHTDatabase(
-            os.getenv('DB_USER', 'postgres'),
+            os.getenv('DB_USER', 'wessup'),
             os.getenv('DB_PASSWORD', '0584qwqw'),
             os.getenv('DB_NAME', 'dht_database')
         ) if not controller else controller
@@ -40,8 +40,16 @@ class DHTQuery(object):
 
         self.prepare_payload("ping", arg_dict)
 
-        logging.info(self.payload)
+        # logging.info(self.payload)
         return asyncio.run(self.send(dest))
+
+    async def async_ping(self, dest=(DHT_ROUTER, DHT_PORT)):
+        arg_dict = {"id": self.random.node_id}
+
+        self.prepare_payload("ping", arg_dict)
+
+        resp = await self.send(dest)
+        return resp
 
     def find_node(self, dest=(DHT_ROUTER, DHT_PORT), target=None):
         arg_dict = {
@@ -114,7 +122,7 @@ class DHTQuery(object):
             logging.error(f"Error : {sys.exc_info()}")
             transport.close()
 
-    def collect_nodes(self, dest, target=None):
+    def collect_nodes(self, dest=(DHT_ROUTER, DHT_PORT), target=None):
         # find nodes and health check --> insert to DB
         for i in range(MAX_RETRY):
             response = self.find_node(dest, target)
@@ -134,7 +142,7 @@ class DHTQuery(object):
                 idx_key += 1
 
         healthy_nodes = self.multi_ping(target_nodes)
-        logging.info(healthy_nodes)
+        # logging.info(healthy_nodes)
 
         if healthy_nodes:
             self.controller.insert(data=[TargetNodes(
@@ -153,8 +161,12 @@ class DHTQuery(object):
         else:
             # close 8
             target_nodes = self.controller.select_close_targets(self.random.node_id)
+        result, nodes = self.announce_sequence(target_nodes, info_hash)
+        if result:
+            data_objects = [AnnouncedNodes(announced=node) for node in nodes]
+            self.controller.insert(data_objects)
 
-    def announce_sequence(self, target: (str, int), info_hash=None):
+    def announce_sequence(self, target, info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
         announces, _ = self.__get(target, info_hash)  # get peer nodes with token
         if not announces:

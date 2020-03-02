@@ -1,10 +1,14 @@
+import sys
+sys.path.append("/home/wessup/workspace/bittorrent")
 from BitTorrent.query import DHTQuery
 from BitTorrent.utils import clock
+from BitTorrent.db import controller
 import logging
 
 c = clock.Clock()
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+
 
 @c.clock_execute
 def test_find_node():
@@ -40,11 +44,24 @@ def test_get_peers():
 
 @c.clock_execute
 def test_collect_nodes():
-    dq = DHTQuery
+    ctl = controller.DHTDatabase(
+        user="wessup",
+        password="0584qwqw",
+        db_name="dht_database",
+    )
+    node_id = controller.get_random(ctl.select_random_valid())
+    info_hash = controller.get_random(ctl.select_random_info())
+    dq = DHTQuery(
+        node_id=node_id,
+        info_hash=info_hash,
+        controller=ctl
+    )
+    healthy = dq.collect_nodes()
+    logging.info(healthy)
 
 
 @c.clock_execute
-def test_announce_peer():
+def test_spread_nodes():
     pass
 
 

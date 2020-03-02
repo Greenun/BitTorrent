@@ -18,6 +18,13 @@ PORT = 5432
 DB_NAME = 'dht_database'
 
 
+def get_random(records):
+    import random
+    if not records:
+        return None
+    idx = random.randint(0, len(records) - 1)
+    return records[idx]
+
 def manage_session(task):
     def session_task(self, *args, **kwargs):
         session = sessionmaker(self.engine)()
