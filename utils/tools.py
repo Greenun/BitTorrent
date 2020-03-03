@@ -79,8 +79,7 @@ def convert(value, mode):
 
 # use for find_nodes
 def extract_nodes(nodes):
-    node_list = [nodes[x:x + 26] for x in range(0, len(nodes), 26)]  # map("".join, zip(*[iter(nodes)]*2))
-    # print(node_list)
+    node_list = [nodes[x:x + 26] for x in range(0, len(nodes), 26)]
     info_dict = {}
 
     def extract_detail(value):
@@ -101,7 +100,6 @@ def extract_nodes(nodes):
 
 def _nodes_to_list(node_dict):
     # form : {'ip': blah, 'port': blah, 'nodeid': blahblah}
-
     node_list = list()
     for key in node_dict:
         node_list.append(node_dict[key])
