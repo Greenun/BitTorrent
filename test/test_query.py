@@ -1,9 +1,8 @@
-import sys
-sys.path.append("/home/wessup/workspace/bittorrent")
+import logging
+import asyncio
 from BitTorrent.query import DHTQuery
 from BitTorrent.utils import clock
 from BitTorrent.db import controller
-import logging
 
 c = clock.Clock()
 logger = logging.getLogger()
@@ -11,25 +10,21 @@ logger.setLevel(logging.INFO)
 
 
 @c.clock_execute
+def test_ping(dest):
+    dq = DHTQuery()
+    resp = asyncio.run(dq.async_ping(dest=dest))
+    logging.info(resp)
+
+
+@c.clock_execute
 def test_find_node():
     dq = DHTQuery()
     # node_id=b'\x85\xc5\xdf\x7f\x7fri\xb51\x12\x85\xd2\xb5\xd7\x0c\xca\xdd5HU'
 
-    resp = dq.find_node(
+    resp = asyncio.run(dq.async_find_node(
         dest=("178.164.195.83", 27860),
         target=b'\x9f\x3a\x9e\xe9\x8a\x0f\x87\x18\xe8\x67\x66\x1d\x88\x25\xbd\x3e\xe0\xa4\x3e\x83'
-    )
-
-    # resp = dq.ping(
-    #     dest=("178.164.195.83", 27860)
-    # )
-
-    # resp = dq.find_node(
-    #     dest=('86.235.112.55', 51588),
-    #     target=b'\xaf\x3b\x2c\x99\x86\xc1\x01\x93\xac\xaf\x75\x00\x06\x44\x83\xca\x8e\xce\x1e\x0f',
-    # )
-
-    # resp = dq.find_node(target=b'\x9f\x3a\x9e\xe9\x8a\x0f\x87\x18\xe8\x67\x66\x1d\x88\x25\xbd\x3e\xe0\xa4\x3e\x83')
+    ))
     logging.info(resp)
 
 
@@ -62,7 +57,22 @@ def test_collect_nodes():
 
 @c.clock_execute
 def test_spread_nodes():
-    pass
+    ctl = controller.DHTDatabase(
+        user="wessup",
+        password="0584qwqw",
+        db_name="dht_database",
+    )
+    node_id = controller.get_random(ctl.select_random_valid())
+    info_hash = controller.get_random(ctl.select_random_info())
+    dq = DHTQuery(
+        node_id=node_id,
+        info_hash=info_hash,
+        controller=ctl
+    )
+    success, nodes = dq.spread_nodes(random=False)
+    if success:
+        logging.info(nodes)
+    logging.info("spread nodes end.")
 
 
 # transaction id 는 repsonse , request 동일
@@ -70,4 +80,6 @@ def test_spread_nodes():
 if __name__ == '__main__':
     # test_find_node()
     # test_get_peers()
-    test_collect_nodes()
+    # test_collect_nodes()
+    # test_ping(('174.3.136.144', 50321))
+    test_spread_nodes()

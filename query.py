@@ -6,7 +6,7 @@ from BitTorrent.utils.tools import RandomArgs, extract_nodes
 import logging
 from BitTorrent.utils.ping import Ping
 from BitTorrent.protocols.client_protocol import DHTClientProtocol
-from BitTorrent.db.models import TargetNodes, AnnouncedNodes
+from BitTorrent.db.models import TargetNodes, AnnouncedNodes, ValidNodes
 from BitTorrent.db.controller import DHTDatabase
 
 DHT_ROUTER = "67.215.246.10"
@@ -199,12 +199,12 @@ class DHTQuery(object):
         healthy_nodes = asyncio.run(self.multi_ping(target_nodes))
         # logging.info(healthy_nodes)
 
-        # if healthy_nodes:
-            # self.controller.insert(data=[TargetNodes(
-            #     node_id=tn['nodeid'],
-            #     ip=tn['ip'],
-            #     port=tn['port'],
-            # ) for tn in healthy_nodes])
+        if healthy_nodes:
+            self.controller.insert(data=[TargetNodes(
+                node_id=tn['node_id'],
+                ip=tn['ip'],
+                port=tn['port'],
+            ) for tn in healthy_nodes])
         return healthy_nodes
 
     def spread_nodes(self, info_hash=None, random=True):
@@ -221,6 +221,11 @@ class DHTQuery(object):
         if result:
             data_objects = [AnnouncedNodes(announced=node) for node in nodes]
             self.controller.insert(data_objects)
+            valid_object = ValidNodes(node_id=self.random.node_id)  # self node id
+            self.controller.insert()
+            return True, nodes
+        else:
+            return False, None
 
     def announce_sequence(self, target, info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
@@ -304,6 +309,7 @@ class DHTQuery(object):
         responses = await asyncio.gather(*futures)
         for response, dest in responses:
             if response:
+                logging.info(f"{dest} : {response}")
                 healthy_nodes.append(dict(
                     ip=dest[0],
                     port=dest[1],
