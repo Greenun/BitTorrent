@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import InvalidRequestError
 from BitTorrent.db.models import Base, ValidNodes, TargetNodes, TorrentInfo
 from BitTorrent.utils.tools import get_distance
-import heapq
+from BitTorrent.utils.heap import DistanceHeap, Node
 
 # for memo
 # https://docs.sqlalchemy.org/en/13/orm/query.html
@@ -20,17 +20,18 @@ DB_NAME = 'dht_database'
 
 def get_random(records):
     import random
-    if not records:
+    if records.count() == 0:
         return None
-    idx = random.randint(0, len(records) - 1)
+    idx = random.randint(0, records.count() - 1)
     return records[idx]
+
 
 def manage_session(task):
     def session_task(self, *args, **kwargs):
         session = sessionmaker(self.engine)()
         result = task(self, session, *args, **kwargs)
         session.close()
-        # return result
+        return result
     return session_task
 
 
@@ -104,8 +105,8 @@ class DHTDatabase(object):
 
     @manage_session
     def select_close_targets(self, session, node_id):
-        records = session.query(TargetNodes).order_by(func.random()).limit(64)  # 임시
-        distances = list()
+        records = session.query(TargetNodes).order_by(func.random()).limit(64)
+        distances = DistanceHeap()
         for target_node in records:
             distance = get_distance(node_id, target_node.node_id)
             node_info = {
@@ -113,10 +114,12 @@ class DHTDatabase(object):
                 'ip': target_node.ip,
                 'port': target_node.port,
             }
-            heapq.heappush(distances, (distance, node_info))
+            distances.push(Node(distance, node_info))
         ret = list()
+        import copy
         for i in range(8):
-            ret.append(heapq.heappop(distances))
+            ret.append(copy.deepcopy(distances.pop().node_info))
+        print(ret)
         return ret
 
     @manage_session
@@ -125,6 +128,7 @@ class DHTDatabase(object):
         target_nodes = list()
         for record in records:
             target_nodes.append(record)
+        print(target_nodes)
         return target_nodes
 
     @manage_session

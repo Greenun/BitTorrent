@@ -229,43 +229,53 @@ class DHTQuery(object):
 
     def announce_sequence(self, target, info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
-        announces, _ = self.__get(target, info_hash)  # get peer nodes with token
+        announces, _ = asyncio.run(self.__get(target, info_hash))  # get peer nodes with token
+        print(announces)
         if not announces:
             return False, None
-        success, failed = self.__announce(announces, info_hash)
+        success, failed = asyncio.run(self.__announce(announces, info_hash))
         if not success:
             return False, failed
         else:
             return True, success
 
-    def __get(self, target, info_hash):
+    async def __get(self, target, info_hash):
         targets = list(target)
         announces = list()
         for _ in range(2):
-            for _ in range(len(targets)):
-                t = targets.pop(0)
-                response = asyncio.run(self.async_get_peers(dest=t, info_hash=info_hash))
-                if not response:
+            futures = [self.async_get_peers(dest=(t['ip'], t['port']), info_hash=info_hash) for t in targets]
+            results = await asyncio.gather(*futures)
+            targets.clear()  # flush previous target list
+            for result in results:
+                response, dest = result
+                if not response or response.get(b'e'):
+                    logging.warning(response)
                     continue
                 if not response.get('token'):
+                    print(response)
                     nodes = extract_nodes(response.get(b'r').get(b'nodes'))
-                    targets.extend([(n['ip'], n['port']) for n in nodes.values()])
+                    targets.extend([n for n in nodes])
                 else:
-                    announces.append((t, response.get('token')))
+                    announces.append((dest, response.get('token')))
         return announces, targets
 
-    def __announce(self, announces: list, info_hash):
+    async def __announce(self, announces: list, info_hash):
         # announces: __get() result
         announced = list()
         announce_failed = list()
-        for target, token in announces:
-            response = asyncio.run(self.async_announce_peer(target, info_hash, token))
-            if response:
-                # announced.append
-                announced.append(response.get(b'r').get(b'id'))
-            if not response:
-                announce_failed.append(target)
-                continue
+
+        futures = [self.async_get_peers(target, info_hash, token) for target, token in announces]
+        results =  asyncio.gather(*futures)
+        for result in results:
+            pass
+        # for target, token in announces:
+        #     response = asyncio.run(self.async_announce_peer(target, info_hash, token))
+        #     if response:
+        #         # announced.append
+        #         announced.append(response.get(b'r').get(b'id'))
+        #     if not response:
+        #         announce_failed.append(target)
+        #         continue
         return announced, announce_failed
     # def __get(self, target, info_hash):
     #     targets = list(target)

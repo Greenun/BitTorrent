@@ -89,7 +89,7 @@ def extract_nodes(nodes):
             d = {
                 'ip': '.'.join(['{}'.format(x) for x in v[20:24]]),
                 'port': int.from_bytes(v[24:], 'big'),
-                'nodeid': v[0:20] # convert(v[0:20], 's')
+                'node_id': v[0:20] # convert(v[0:20], 's')
             }
             info_dict[str(idx)] = d
             idx += 1

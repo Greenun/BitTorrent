@@ -64,9 +64,10 @@ def test_spread_nodes():
     )
     node_id = controller.get_random(ctl.select_random_valid())
     info_hash = controller.get_random(ctl.select_random_info())
+
     dq = DHTQuery(
         node_id=node_id,
-        info_hash=info_hash,
+        info_hash=info_hash.info_hash,
         controller=ctl
     )
     success, nodes = dq.spread_nodes(random=False)
