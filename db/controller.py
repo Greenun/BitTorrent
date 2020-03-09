@@ -119,7 +119,7 @@ class DHTDatabase(object):
         import copy
         for i in range(8):
             ret.append(copy.deepcopy(distances.pop().node_info))
-        print(ret)
+        # print(ret)
         return ret
 
     @manage_session
@@ -130,6 +130,14 @@ class DHTDatabase(object):
             target_nodes.append(record)
         print(target_nodes)
         return target_nodes
+
+    @manage_session
+    def select_target(self, session, node_id):
+        records = session.query(TargetNodes).filter_by(node_id=node_id).all()
+        print(node_id, records)
+        if records:
+            return records[0]
+        return None
 
     @manage_session
     def update(self, session, data):

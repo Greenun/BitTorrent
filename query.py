@@ -8,6 +8,7 @@ from BitTorrent.utils.ping import Ping
 from BitTorrent.protocols.client_protocol import DHTClientProtocol
 from BitTorrent.db.models import TargetNodes, AnnouncedNodes, ValidNodes
 from BitTorrent.db.controller import DHTDatabase
+from typing import List
 
 DHT_ROUTER = "67.215.246.10"
 DHT_PORT = 6881
@@ -117,7 +118,7 @@ class DHTQuery(object):
         arg_dict = {
             "id": self.random.node_id,
             "info_hash": info_hash,
-            "implied_port": 0,
+            "implied_port": 0,  # not fixed (NAT?)
             "port": 6881 if not port else port,  # not fixed
             "token": token,  # for test #token
         }
@@ -172,10 +173,6 @@ class DHTQuery(object):
                 transport.close()
 
     def collect_nodes(self, dest=(DHT_ROUTER, DHT_PORT), target=None):
-        # find nodes and health check --> insert to DB
-        # for i in range(MAX_RETRY):
-        #     response = self.find_node(dest, target)
-        #     if response: break
         response = asyncio.run(self.async_find_node(dest, target))
         if not response:
             logging.warning(f"Request find_node to {dest} is not available now.")
@@ -219,13 +216,33 @@ class DHTQuery(object):
 
         result, nodes = self.announce_sequence(target_nodes, info_hash)
         if result:
-            data_objects = [AnnouncedNodes(announced=node) for node in nodes]
+            found_target = self.__classify(nodes)
+            data_objects = [AnnouncedNodes(announced=node.id) for node in found_target]
             self.controller.insert(data_objects)
             valid_object = ValidNodes(node_id=self.random.node_id)  # self node id
-            self.controller.insert()
+            self.controller.insert(valid_object)
             return True, nodes
         else:
             return False, None
+
+    def __classify(self, nodes: List) -> List[TargetNodes]:
+        target_nodes = list()
+        for node in nodes:
+            print(f"line 235: {node}")
+            result = self.controller.select_target(node['node_id'])
+            print(f"line 237: {result}")
+            if not result:
+                target_node = TargetNodes(
+                    node_id=node.get('node_id'),
+                    ip=node.get('ip'),
+                    port=node.get('port')
+                )
+                self.controller.insert(target_node)
+                target_node = self.controller.select_target(target_node.node_id)
+                target_nodes.append(target_node)
+            else:
+                target_nodes.append(result)
+        return target_nodes
 
     def announce_sequence(self, target, info_hash=None):
         info_hash = self.random.info_hash if not info_hash else info_hash
@@ -251,31 +268,35 @@ class DHTQuery(object):
                 if not response or response.get(b'e'):
                     logging.warning(response)
                     continue
-                if not response.get('token'):
+                if not response.get(b'r').get(b'token'):
                     print(response)
                     nodes = extract_nodes(response.get(b'r').get(b'nodes'))
                     targets.extend([n for n in nodes])
                 else:
-                    announces.append((dest, response.get('token')))
+                    announces.append((dest, response.get(b'r').get(b'token')))
         return announces, targets
 
     async def __announce(self, announces: list, info_hash):
         # announces: __get() result
         announced = list()
         announce_failed = list()
+        print(f"line 286: {announces}")
 
-        futures = [self.async_get_peers(target, info_hash, token) for target, token in announces]
-        results =  asyncio.gather(*futures)
-        for result in results:
-            pass
-        # for target, token in announces:
-        #     response = asyncio.run(self.async_announce_peer(target, info_hash, token))
-        #     if response:
-        #         # announced.append
-        #         announced.append(response.get(b'r').get(b'id'))
-        #     if not response:
-        #         announce_failed.append(target)
-        #         continue
+        futures = [self.async_announce_peer(target, info_hash, token) for target, token in announces]
+        results = await asyncio.gather(*futures)
+
+        for response, dest in results:
+            target_dict = dict()
+            target_dict['ip'], target_dict['port'] = dest
+            target_dict['node_id'] = None
+            if not response:
+                announce_failed.append(target_dict)
+            elif response.get(b'e'):
+                logging.warning(response.get(b'e'))
+                announce_failed.append(target_dict)
+            else:
+                target_dict['node_id'] = response.get(b'r').get(b'id')
+                announced.append(target_dict)
         return announced, announce_failed
     # def __get(self, target, info_hash):
     #     targets = list(target)
@@ -326,16 +347,6 @@ class DHTQuery(object):
                     node_id=response.get(b'r').get(b'id'),
                 ))
         return healthy_nodes
-    # def multi_ping(self, nodes, max_retry=MAX_RETRY):
-    #     # bittorrent ping check
-    #     healthy_nodes = list()
-    #     for tn in nodes.values():
-    #         for _ in range(max_retry):
-    #             resp = self.ping(dest=(tn['ip'], tn['port']))
-    #             if resp:
-    #                 healthy_nodes.append(tn)
-    #                 break
-    #     return healthy_nodes
 
 
 if __name__ == "__main__":

@@ -59,6 +59,10 @@ def node_collect(db_controller: controller.DHTDatabase):
     )
 
 
+def node_spread(db_controller: controller.DHTDatabase, random_node=True):
+    pass
+
+
 if __name__ == '__main__':
     args = parser.parse_args()
     main(args)
