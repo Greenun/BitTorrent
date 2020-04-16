@@ -1,7 +1,7 @@
 import time
 import logging
 
-
+# for test code
 class Clock(object):
     def __init__(self):
         self.logger = logging.getLogger(self.__class__.__qualname__)

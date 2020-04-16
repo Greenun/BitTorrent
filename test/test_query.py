@@ -19,7 +19,6 @@ def test_ping(dest):
 @c.clock_execute
 def test_find_node():
     dq = DHTQuery()
-    # node_id=b'\x85\xc5\xdf\x7f\x7fri\xb51\x12\x85\xd2\xb5\xd7\x0c\xca\xdd5HU'
 
     resp = asyncio.run(dq.async_find_node(
         dest=("178.164.195.83", 27860),
@@ -62,11 +61,7 @@ def test_spread_nodes():
         password="0584qwqw",
         db_name="dht_database",
     )
-    # z = ctl.select_all_target()[0]
-    # print(z)
-    #
-    # x = ctl.select_target(b'\x83\xbf\x9d\xb1\xe9\xe3\x7e\x55\x50\x8f\x86\xe6\x41\xa8\xbe\x5e\xf4\xff\x34\xca')
-    # print(x)
+
     node_id = controller.get_random(ctl.select_random_valid())
     info_hash = controller.get_random(ctl.select_random_info())
 

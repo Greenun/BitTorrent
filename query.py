@@ -1,20 +1,19 @@
 import asyncio
-import sys
 import os
 from BitTorrent.utils.bencoder import *
 from BitTorrent.utils.tools import RandomArgs, extract_nodes
 import logging
-from BitTorrent.utils.ping import Ping
 from BitTorrent.protocols.client_protocol import DHTClientProtocol
 from BitTorrent.db.models import TargetNodes, AnnouncedNodes, ValidNodes
 from BitTorrent.db.controller import DHTDatabase
+from BitTorrent.utils.tools import random_node_id
+from BitTorrent.utils.ping import Ping
 from typing import List
 
 DHT_ROUTER = "67.215.246.10"
 DHT_PORT = 6881
 MAX_RETRY = 3
 
-# for memo
 # NAT Traversal
 # https://tools.ietf.org/html/rfc5389
 
@@ -36,6 +35,7 @@ class DHTQuery(object):
             os.getenv('DB_NAME', 'dht_database')
         ) if not controller else controller
 
+    # not async method would be removed
     def ping(self, dest=(DHT_ROUTER, DHT_PORT)):
         arg_dict = {"id": self.random.node_id}
 
@@ -52,6 +52,7 @@ class DHTQuery(object):
         resp = await self.send(dest, data)
         return resp, dest
 
+    # not async method would be removed
     def find_node(self, dest=(DHT_ROUTER, DHT_PORT), target=None):
         arg_dict = {
             "id": self.random.node_id,
@@ -82,6 +83,7 @@ class DHTQuery(object):
         resp = await self.send(dest, data)
         return resp
 
+    # not async method would be removed
     def get_peers(self, dest=(DHT_ROUTER, DHT_PORT), info_hash=None):
         arg_dict = {
             "id": self.random.node_id,
@@ -102,6 +104,7 @@ class DHTQuery(object):
         resp = await self.send(dest, data)
         return resp, dest
 
+    # not async method would be removed
     def announce_peer(self, dest, info_hash, token, port=None):
         arg_dict = {
             "id": self.random.node_id,
@@ -136,17 +139,6 @@ class DHTQuery(object):
         payload["a"] = args
 
         return payload
-
-    # def prepare_payload(self, request_type, args):
-    #     # self.random._generate_tid()
-    #
-    #     self.payload["t"] = self.random.transaction_id
-    #     self.payload["y"] = "q"  # class only for query
-    #     self.payload["q"] = request_type
-    #     self.payload["a"] = args
-    #
-    #     # self.payload = bencode(self.payload)
-    #     return self.payload
 
     async def send(self, target_addr, payload=None):
         assert isinstance(target_addr, tuple)
@@ -228,9 +220,7 @@ class DHTQuery(object):
     def __classify(self, nodes: List) -> List[TargetNodes]:
         target_nodes = list()
         for node in nodes:
-            print(f"line 235: {node}")
             result = self.controller.select_target(node['node_id'])
-            print(f"line 237: {result}")
             if not result:
                 target_node = TargetNodes(
                     node_id=node.get('node_id'),
@@ -298,39 +288,6 @@ class DHTQuery(object):
                 target_dict['node_id'] = response.get(b'r').get(b'id')
                 announced.append(target_dict)
         return announced, announce_failed
-    # def __get(self, target, info_hash):
-    #     targets = list(target)
-    #     announces = list()
-    #     for _ in range(2):
-    #         for _ in range(len(targets)):
-    #             t = targets.pop(0)
-    #             for _ in range(MAX_RETRY):
-    #                 response = self.get_peers(dest=t, info_hash=info_hash)
-    #                 if response:
-    #                     break
-    #             if not response:
-    #                 continue
-    #             if not response.get('token'):
-    #                 nodes = extract_nodes(response.get(b'r').get(b'nodes'))
-    #                 targets.extend([(n['ip'], n['port']) for n in nodes.values()])
-    #             else:
-    #                 announces.append((t, response.get('token')))
-    #     return announces, targets
-
-    # def __announce(self, announces: list, info_hash):
-    #     # announces: __get() result
-    #     announced = list()
-    #     announce_failed = list()
-    #     for target, token in announces:
-    #         for _ in range(MAX_RETRY):
-    #             response = self.announce_peer(target, info_hash, token)
-    #             if response:
-    #                 # announced.append
-    #                 announced.append(response.get(b'r').get(b'id'))
-    #         if not response:
-    #             announce_failed.append(target)
-    #             continue
-    #     return announced, announce_failed
 
     async def multi_ping(self, nodes, max_retry=MAX_RETRY):
         # bittorrent ping check
@@ -352,35 +309,25 @@ class DHTQuery(object):
 if __name__ == "__main__":
     r = logging.getLogger()
     r.setLevel(logging.INFO)
-    dq = DHTQuery(node_id=b'\x9e\x92\x1e\x97"lC\xc3\x0eB\x9a&\xa3\xc2\xd3o\x89\x94\x83B') # node_id=b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
-    # target = random_node_id()
-    # dq.collect_nodes(dest=(DHT_ROUTER, DHT_PORT), target=target)
+    dq = DHTQuery(node_id=b'\x9e\x92\x1e\x97"lC\xc3\x0eB\x9a&\xa3\xc2\xd3o\x89\x94\x83B')
 
-    # b'2\xf5NisQ\xffJ\xec)\xcd\xba\xab\xf2\xfb\xe3F|\xc2g'
-    x = dq.find_node()
+    resp = dq.find_node()
+    addr_list = extract_nodes(resp['r'.encode()]['nodes'.encode()])
+    icmp_ping = Ping()
+    enables = icmp_ping.ping_check(x['ip'] for x in addr_list)
 
-    # print(x)
-    # if not x: sys.exit(0)
-    # addr_list = extract_nodes(x['r'.encode()]['nodes'.encode()])
-    # check = Ping()
-    # print(addr_list)
-    # enables = check.ping_check([x['ip'] for x in addr_list])
-    # print("enables: ", enables)
-    # enable_ip = list()
-    #
-    # ip_and_ports = list()
-    # for addr in addr_list:
-    #     if addr['ip'] in enables:
-    #         ip_and_ports.append(addr)
-    #
-    # print(ip_and_ports)
-    # for d in ip_and_ports:
-    #     t = dq.get_peers(dest=(d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@')
-    #     print(d["ip"], d["port"])
-    #     if not t: continue
-    #     print("----------- Announce Peer -----------")
-    #     tk = t[b'r'][b'token']
-    #     print(tk)
-    #     res = dq.announce_peer((d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@',
-    #                      token=tk)
-    #     print("----------- Announce Peer Ends -----------")
+    ip_and_ports = list()
+    for addr in addr_list:
+        if addr['ip'] in enables:
+            ip_and_ports.append(addr)
+
+    for d in ip_and_ports:
+        t = dq.get_peers(dest=(d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@')
+        logging.info(d["ip"], d["port"])
+        if not t: continue
+        logging.info("----------- Announce Peer -----------")
+        tk = t[b'r'][b'token']
+        logging.info(tk)
+        res = dq.announce_peer((d["ip"], d["port"]), info_hash=b'T\x86\x12W\xc3\xefj\x01x\xd2\x984`\nN\xf1\xe1\xc6!@',
+                         token=tk)
+        logging.info("----------- Announce Peer Ends -----------")

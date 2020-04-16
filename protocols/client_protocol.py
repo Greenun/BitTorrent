@@ -34,7 +34,6 @@ class DHTClientProtocol(asyncio.DatagramProtocol):
         logging.info("Connection closed")
         self.stop_timer()
         if not self.connection_end.done():
-            # self.connection_end.set_result(True)
             self.connection_end.set_result(self.response)
 
     def timer(self):
@@ -56,7 +55,7 @@ async def client(data, *target_addr):
     transport, protocol = await loop.create_datagram_endpoint(
         lambda: DHTClientProtocol(data, loop),
         remote_addr=target_addr
-    )  # ("127.0.0.1", 40000)
+    )
     try:
         await protocol.connection_end
     finally:
@@ -64,4 +63,5 @@ async def client(data, *target_addr):
 
 
 if __name__ == '__main__':
-    asyncio.run(client())
+    # asyncio.run(client())
+    pass
