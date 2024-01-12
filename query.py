@@ -30,8 +30,8 @@ class DHTQuery(object):
             self.random = RandomArgs()
         self.protocol = DHTClientProtocol
         self.controller = DHTDatabase(
-            os.getenv('DB_USER', 'wessup'),
-            os.getenv('DB_PASSWORD', '0584qwqw'),
+            os.getenv('DB_USER', ''),
+            os.getenv('DB_PASSWORD', ''),
             os.getenv('DB_NAME', 'dht_database')
         ) if not controller else controller
 
